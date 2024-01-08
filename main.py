@@ -74,7 +74,7 @@ def get_brightest_stars():
 @app.route('/stars/biggest', methods=['GET'])
 @jwt_required()
 def get_biggest_stars():
-    biggest_stars = star_data.nlargest(50, 'radius')
+    biggest_stars = star_data.nlargest(50, 'lum')
     return jsonify(biggest_stars.to_dict(orient='records'))
 
 if __name__ == '__main__':
