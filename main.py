@@ -1,32 +1,64 @@
-from fastapi import FastAPI, HTTPException
+from flask import Flask, jsonify, request
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 import pandas as pd
-import json
-import numpy as np
 
-# Charger le fichier CSV
-df = pd.read_csv("data/hygdata_v37.csv")
-df.replace([np.inf, -np.inf, np.nan], 0, inplace=True)
+# Charger les données
+file_path = 'data/hygdata_v37.csv'
+star_data = pd.read_csv(file_path)
 
-# Créer une instance FastAPI
-app = FastAPI()
+# Créer l'application Flask
+app = Flask(__name__)
 
-# Route pour obtenir toutes les données
-@app.get("/stars")
-def get_donnees():
-    json_data = json.loads(df.to_json(orient="records"))
-    return json_data
+# Configuration JWT
+app.config["JWT_SECRET_KEY"] = "votre_secret_jwt"  # Changez ceci pour votre clé secrète
+jwt = JWTManager(app)
 
-# Route pour obtenir les données par id
-@app.get("/stars/{element_id}")
-def get_element_par_id(element_id: int):
-    try:
-        # Filtrer le DataFrame pour obtenir l'élément avec l'id spécifié
-        element = df[df['id'] == element_id].to_dict(orient="records")[0]
-        return element
-    except IndexError:
-        raise HTTPException(status_code=404, detail="Element non trouvé")
+# Route pour se connecter et obtenir un token JWT
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.json.get("username", None)
+    password = request.json.get("password", None)
 
+    # Ici, validez l'authenticité de l'utilisateur (exemple simplifié)
+    if username != "admin" or password != "password":
+        return jsonify({"msg": "Mauvais nom d'utilisateur ou mot de passe"}), 401
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    access_token = create_access_token(identity=username)
+    return jsonify(access_token=access_token)
+
+# Route pour obtenir toutes les étoiles
+@app.route('/stars', methods=['GET'])
+@jwt_required()
+def get_stars():
+    return jsonify(star_data.to_dict(orient='records'))
+
+# Route pour obtenir les 50 étoiles les plus chaudes
+@app.route('/stars/hottest', methods=['GET'])
+@jwt_required()
+def get_hottest_stars():
+    hottest_stars = star_data.nlargest(50, 'temp')
+    return jsonify(hottest_stars.to_dict(orient='records'))
+
+# Route pour obtenir les 50 étoiles les plus proches
+@app.route('/stars/closest', methods=['GET'])
+@jwt_required()
+def get_closest_stars():
+    closest_stars = star_data.nsmallest(50, 'dist')
+    return jsonify(closest_stars.to_dict(orient='records'))
+
+# Route pour obtenir les 50 étoiles les plus brillantes
+@app.route('/stars/brightest', methods=['GET'])
+@jwt_required()
+def get_brightest_stars():
+    brightest_stars = star_data.nlargest(50, 'mag')
+    return jsonify(brightest_stars.to_dict(orient='records'))
+
+# Route pour obtenir les 50 étoiles les plus grosses
+@app.route('/stars/biggest', methods=['GET'])
+@jwt_required()
+def get_biggest_stars():
+    biggest_stars = star_data.nlargest(50, 'radius')
+    return jsonify(biggest_stars.to_dict(orient='records'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
