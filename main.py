@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 import pandas as pd
 
@@ -8,6 +9,9 @@ star_data = pd.read_csv(file_path)
 
 # Créer l'application Flask
 app = Flask(__name__)
+
+# Activer CORS pour votre application Flask
+CORS(app)
 
 # Configuration JWT
 app.config["JWT_SECRET_KEY"] = "votre_secret_jwt"  # Changez ceci pour votre clé secrète
@@ -31,13 +35,6 @@ def login():
 @jwt_required()
 def get_stars():
     return jsonify(star_data.to_dict(orient='records'))
-
-# # Route pour obtenir les 50 étoiles les plus chaudes
-# @app.route('/stars/hottest', methods=['GET'])
-# @jwt_required()
-# def get_hottest_stars():
-#     hottest_stars = star_data.nlargest(50, 'temp')
-#     return jsonify(hottest_stars.to_dict(orient='records'))
 
 # Fonction pour estimer la température à partir de la classe spectrale
 def estimate_temperature(spect):
