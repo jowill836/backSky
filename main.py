@@ -6,6 +6,7 @@ import pandas as pd
 # Charger les données
 file_path = 'data/hygdata_v37.csv'
 star_data = pd.read_csv(file_path)
+star_data = star_data.fillna('null')
 
 # Créer l'application Flask
 app = Flask(__name__)
@@ -13,8 +14,9 @@ app = Flask(__name__)
 # Activer CORS pour votre application Flask
 CORS(app)
 
+
 # Configuration JWT
-app.config["JWT_SECRET_KEY"] = "votre_secret_jwt"  # Changez ceci pour votre clé secrète
+app.config["JWT_SECRET_KEY"] = "votre_secret_jwt"  # Changez ceci pour votre clé secrètels
 jwt = JWTManager(app)
 
 # Route pour se connecter et obtenir un token JWT
@@ -34,7 +36,7 @@ def login():
 @app.route('/stars', methods=['GET'])
 @jwt_required()
 def get_stars():
-    return jsonify(star_data.to_dict(orient='records'))
+    return jsonify(star_data.head(1000).to_dict(orient='records'))
 
 # Fonction pour estimer la température à partir de la classe spectrale
 def estimate_temperature(spect):
